@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Groundnut Storage System | Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2E7D32;
+            --primary-light: #4CAF50;
+            --primary-dark: #1B5E20;
+            --secondary: #FF9800;
+            --danger: #F44336;
+            --warning: #FFC107;
+            --info: #2196F3;
+            --dark: #263238;
+            --light: #ECEFF1;
+            --gray: #90A4AE;
+            --white: #FFFFFF;
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ed 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header Styles */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 24px;
+        }
+
+        .title h1 {
+            font-weight: 700;
+            font-size: 28px;
+            color: var(--dark);
+        }
+
+        .title p {
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: var(--light);
+            border-radius: 50px;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Dashboard Grid */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 18px;
+        }
+
+        .icon-temp {
+            background: linear-gradient(135deg, #FF5252, #FF867E);
+        }
+
+        .icon-humidity {
+            background: linear-gradient(135deg, #2196F3, #64B5F6);
+        }
+
+        .icon-gas {
+            background: linear-gradient(135deg, #FF9800, #FFB74D);
+        }
+
+        .icon-fan {
+            background: linear-gradient(135deg, #4CAF50, #81C784);
+        }
+
+        .icon-heater {
+            background: linear-gradient(135deg, #F44336, #E57373);
+        }
+
+        .icon-control {
+            background: linear-gradient(135deg, #673AB7, #9575CD);
+        }
+
+        /* Value Styles */
+        .value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .value-unit {
+            font-size: 16px;
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        .value-label {
+            font-size: 14px;
+            color: var(--gray);
+            margin-bottom: 15px;
+        }
+
+        /* Gauge Styles */
+        .gauge-container {
+            position: relative;
+            height: 120px;
+            margin: 20px 0;
+        }
+
+        .gauge {
+            width: 100%;
+            height: 10px;
+            background: var(--light);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .gauge-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 1s ease;
+        }
+
+        .gauge-temp {
+            background: linear-gradient(90deg, #4CAF50, #FFC107, #F44336);
+        }
+
+        .gauge-humidity {
+            background: linear-gradient(90deg, #4CAF50, #2196F3, #3F51B5);
+        }
+
+        .gauge-gas {
+            background: linear-gradient(90deg, #4CAF50, #FF9800, #F44336);
+        }
+
+        .gauge-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        /* Status Styles */
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status-safe {
+            background: rgba(76, 175, 80, 0.15);
+            color: var(--primary);
+        }
+
+        .status-warning {
+            background: rgba(255, 152, 0, 0.15);
+            color: var(--warning);
+        }
+
+        .status-danger {
+            background: rgba(244, 67, 54, 0.15);
+            color: var(--danger);
+        }
+
+        .status-running {
+            background: rgba(33, 150, 243, 0.15);
+            color: var(--info);
+        }
+
+        /* Control Styles */
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray);
+            color: var(--white);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background: #D32F2F;
+        }
+
+        /* History Section */
+        .history-section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th {
+            text-align: left;
+            padding: 15px;
+            border-bottom: 2px solid var(--light);
+            color: var(--gray);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .history-table td {
+            padding: 15px;
+            border-bottom: 1px solid var(--light);
+        }
+
+        .history-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-container">
+                <div class="logo">
+                    <i class="fas fa-seedling"></i>
+                </div>
+                <div class="title">
+                    <h1>Smart Groundnut Storage System</h1>
+                    <p>Real-time Monitoring & Control Dashboard</p>
+                </div>
+            </div>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span id="connectionStatus">Connected to Firebase</span>
+            </div>
+        </header>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard">
+            <!-- Temperature Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <div class="card-icon icon-temp">
+                            <i class="fas fa-thermometer-half"></i>
+                        </div>
+                        Container Temperature
+                    </h2>
+                </div>
+                <div class="value" id="tempValue">--</div>
+                <div class="value-label">Current Temperature</div>
+                <div class="gauge-container">
+                    <div class="gauge">
+                        <div id="tempGauge" class="gauge-fill gauge-temp" style="width: 0%"></div>
+                    </div>
+                    <div class="gauge-labels">
+                        <span>0°C</span>
+                        <span>25°C</span>
+                        <span>50°C</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Humidity Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <div class="card-icon icon-humidity">
+                            <i class="fas fa-tint"></i>
+                        </div>
+                        Humidity Level
+                    </h2>
+                </div>
+                <div class="value" id="humidityValue">--</div>
+                <div class="value-label">Relative Humidity</div>
+                <div class="gauge-container">
+                    <div class="gauge">
+                        <div id="humidityGauge" class="gauge-fill gauge-humidity" style="width: 0%"></div>
+                    </div>
+                    <div class="gauge-labels">
+                        <span>0%</span>
+                        <span>50%</span>
+                        <span>100%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gas Level Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <div class="card-icon icon-gas">
+                            <i class="fas fa-wind"></i>
+                        </div>
+                        Gas Level
+                    </h2>
+                </div>
+                <div class="value" id="gasValue">--</div>
+                <div class="value-label">MQ2 Sensor Reading</div>
+                <div class="gauge-container">
+                    <div class="gauge">
+                        <div id="gasGauge" class="gauge-fill gauge-gas" style="width: 0%"></div>
+                    </div>
+                    <div class="gauge-labels">
+                        <span>0</span>
+                        <span>1500</span>
+                        <span>3000</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Heater Temperature Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <div class="card-icon icon-heater">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        Heater Temperature
+                    </h2>
+                </div>
+                <div class="value" id="heaterTempValue">--</div>
+                <div class="value-label">Heater Element Temperature</div>
+                <div class="status" id="heaterStatus">--</div>
+            </div>
+
+            <!-- Fan Speed Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <div class="card-icon icon-fan">
+                            <i class="fas fa-fan"></i>
+                        </div>
+                        Fan Speed
+                    </h2>
+                </div>
+                <div class="value" id="fanSpeedValue">--</div>
+                <div class="value-label">Current Fan Speed (PWM)</div>
+                <div class="status" id="fanStatus">--</div>
+            </div>
+
+            <!-- System Controls Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <div class="card-icon icon-control">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        System Controls
+                    </h2>
+                </div>
+                <div class="value" id="systemStatus">--</div>
+                <div class="value-label">Current System Status</div>
+                
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="sendCommand('relay', 'ON')">
+                        <i class="fas fa-power-off"></i> Turn ON Relay
+                    </button>
+                    <button class="btn btn-secondary" onclick="sendCommand('relay', 'OFF')">
+                        <i class="fas fa-times"></i> Turn OFF Relay
+                    </button>
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <label for="fanControl" style="display: block; margin-bottom: 8px; font-weight: 500;">Fan Speed Control</label>
+                    <input type="range" id="fanControl" min="0" max="255" value="0" class="slider" onchange="setFanSpeed(this.value)">
+                    <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                        <span>0</span>
+                        <span id="fanControlValue">0</span>
+                        <span>255</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Section -->
+        <section class="history-section">
+            <div class="section-header">
+                <h2 class="section-title">System History</h2>
+                <button class="btn btn-secondary" onclick="clearHistory()">
+                    <i class="fas fa-trash"></i> Clear History
+                </button>
+            </div>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Temperature</th>
+                        <th>Humidity</th>
+                        <th>Gas Level</th>
+                        <th>System Status</th>
+                    </tr>
+                </thead>
+                <tbody id="historyBody">
+                    <tr>
+                        <td colspan="5" style="text-align: center;">Loading data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Smart Groundnut Storage System &copy; 2023 | Real-time Monitoring Dashboard</p>
+            <p id="lastUpdate">Last update: --</p>
+        </footer>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAJBs24S4TIEoYdhv_DqTgc1_yRcziZ97s",
+            authDomain: "smart-groundnut-storage-system.firebaseapp.com",
+            databaseURL: "https://smart-groundnut-storage-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "smart-groundnut-storage-system",
+            storageBucket: "smart-groundnut-storage-system.firebasestorage.app",
+            messagingSenderId: "570650575337",
+            appId: "1:570650575337:web:437462c4e2b2583756cb78"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // DOM Elements
+        const tempValue = document.getElementById('tempValue');
+        const humidityValue = document.getElementById('humidityValue');
+        const gasValue = document.getElementById('gasValue');
+        const heaterTempValue = document.getElementById('heaterTempValue');
+        const fanSpeedValue = document.getElementById('fanSpeedValue');
+        const systemStatus = document.getElementById('systemStatus');
+        const heaterStatus = document.getElementById('heaterStatus');
+        const fanStatus = document.getElementById('fanStatus');
+        const lastUpdate = document.getElementById('lastUpdate');
+        const historyBody = document.getElementById('historyBody');
+        const fanControl = document.getElementById('fanControl');
+        const fanControlValue = document.getElementById('fanControlValue');
+
+        // Listen for real-time updates
+        database.ref('storageSystem').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                updateDashboard(data);
+                updateConnectionStatus(true);
+            }
+        }, (error) => {
+            updateConnectionStatus(false);
+            console.error("Firebase error: ", error);
+        });
+
+        // Listen for historical data
+        database.ref('storageSystem/history').limitToLast(10).on('value', (snapshot) => {
+            updateHistory(snapshot.val());
+        });
+
+        function updateDashboard(data) {
+            // Update current values
+            if (data.temperature !== undefined) {
+                tempValue.textContent = data.temperature.toFixed(1) + ' °C';
+                document.getElementById('tempGauge').style.width = Math.min((data.temperature / 50) * 100, 100) + '%';
+            }
+            
+            if (data.humidity !== undefined) {
+                humidityValue.textContent = data.humidity.toFixed(1) + ' %';
+                document.getElementById('humidityGauge').style.width = Math.min(data.humidity, 100) + '%';
+            }
+            
+            if (data.gasLevel !== undefined) {
+                gasValue.textContent = data.gasLevel.toFixed(0);
+                document.getElementById('gasGauge').style.width = Math.min((data.gasLevel / 3000) * 100, 100) + '%';
+            }
+            
+            if (data.heaterTemperature !== undefined) {
+                heaterTempValue.textContent = data.heaterTemperature.toFixed(1) + ' °C';
+                updateHeaterStatus(data.heaterTemperature);
+            }
+            
+            if (data.fanSpeed !== undefined) {
+                fanSpeedValue.textContent = data.fanSpeed;
+                fanControl.value = data.fanSpeed;
+                fanControlValue.textContent = data.fanSpeed;
+                updateFanStatus(data.fanSpeed);
+            }
+            
+            if (data.systemStatus !== undefined) {
+                systemStatus.textContent = data.systemStatus;
+                systemStatus.className = 'status ' + getStatusClass(data.systemStatus);
+            }
+            
+            if (data.relayStatus !== undefined) {
+                updateRelayStatus(data.relayStatus);
+            }
+            
+            // Update last update time
+            lastUpdate.textContent = 'Last update: ' + new Date().toLocaleString();
+        }
+
+        function updateHeaterStatus(temp) {
+            heaterStatus.textContent = temp > 70 ? 'OVERHEATING' : 'NORMAL';
+            heaterStatus.className = 'status ' + (temp > 70 ? 'status-danger' : 'status-safe');
+        }
+
+        function updateFanStatus(speed) {
+            fanStatus.textContent = speed > 0 ? 'RUNNING' : 'IDLE';
+            fanStatus.className = 'status ' + (speed > 0 ? 'status-running' : 'status-safe');
+        }
+
+        function updateRelayStatus(status) {
+            const relayButtons = document.querySelectorAll('.btn');
+            if (status === 'ON') {
+                relayButtons[0].classList.add('btn-primary');
+                relayButtons[0].classList.remove('btn-secondary');
+                relayButtons[1].classList.add('btn-secondary');
+                relayButtons[1].classList.remove('btn-primary');
+            } else {
+                relayButtons[1].classList.add('btn-primary');
+                relayButtons[1].classList.remove('btn-secondary');
+                relayButtons[0].classList.add('btn-secondary');
+                relayButtons[0].classList.remove('btn-primary');
+            }
+        }
+
+        function getStatusClass(status) {
+            switch(status) {
+                case 'SAFETY_TRIGGERED': return 'status-danger';
+                case 'HEATING_ACTIVE': return 'status-warning';
+                case 'RUNNING': return 'status-running';
+                case 'IDLE': return 'status-safe';
+                default: return 'status-safe';
+            }
+        }
+
+        function updateHistory(historyData) {
+            const tbody = document.getElementById('historyBody');
+            if (!historyData) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No historical data available</td></tr>';
+                return;
+            }
+            
+            let html = '';
+            const entries = Object.entries(historyData).slice(-10).reverse();
+            
+            if (entries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No historical data available</td></tr>';
+                return;
+            }
+            
+            entries.forEach(([timestamp, data]) => {
+                const time = new Date(parseInt(timestamp) * 1000).toLocaleTimeString();
+                html += `
+                    <tr>
+                        <td>${time}</td>
+                        <td>${data.temperature?.toFixed(1) || '--'} °C</td>
+                        <td>${data.humidity?.toFixed(1) || '--'} %</td>
+                        <td>${data.gasLevel?.toFixed(0) || '--'}</td>
+                        <td><span class="status ${getStatusClass(data.systemStatus)}">${data.systemStatus || '--'}</span></td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusElement = document.getElementById('connectionStatus');
+            const statusDot = document.querySelector('.status-dot');
+            
+            if (connected) {
+                statusElement.textContent = 'Connected to Firebase';
+                statusDot.style.background = '#4CAF50';
+            } else {
+                statusElement.textContent = 'Disconnected from Firebase';
+                statusDot.style.background = '#F44336';
+            }
+        }
+
+        function sendCommand(command, value) {
+            database.ref('storageSystem/commands').update({
+                [command]: value
+            });
+            showNotification(`Command sent: ${command} = ${value}`);
+        }
+
+        function setFanSpeed(speed) {
+            fanControlValue.textContent = speed;
+            database.ref('storageSystem/commands').update({
+                fanSpeed: parseInt(speed)
+            });
+        }
+
+        function clearHistory() {
+            if (confirm('Are you sure you want to clear all historical data?')) {
+                database.ref('storageSystem/history').remove();
+                showNotification('History cleared successfully');
+            }
+        }
+
+        function showNotification(message) {
+            // Create a simple notification
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--primary);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                z-index: 1000;
+                font-weight: 500;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Initialize the dashboard with default values
+        window.onload = function() {
+            // Set initial values
+            updateConnectionStatus(false);
+        };
+    </script>
+</body>
+</html>
